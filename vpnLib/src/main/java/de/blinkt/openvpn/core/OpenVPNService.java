@@ -17,6 +17,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ShortcutManager;
 import android.content.res.Configuration;
@@ -299,7 +300,11 @@ public class OpenVPNService extends VpnService implements StateListener, Callbac
     private void showNotification(final String msg, String tickerText, @NonNull String channel,
                                   long when, ConnectionStatus status, Intent intent) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            channel = createNotificationChannel(channel, channel + " Name");
+            if(channel.equals(NOTIFICATION_CHANNEL_BG_ID)){
+               channel = createNotificationChannel(channel, getAppName(this) + " VPN Background");
+            } else if(channel.equals(NOTIFICATION_CHANNEL_NEWSTATUS_ID)){
+               channel = createNotificationChannel(channel, getAppName(this) + " VPN Stats");
+            }
         } else {
             // If earlier version channel ID is not used
             // https://developer.android.com/reference/android/support/v4/app/NotificationCompat.Builder.html#NotificationCompat.Builder(android.content.Context)
@@ -401,6 +406,20 @@ public class OpenVPNService extends VpnService implements StateListener, Callbac
         nbuilder.setCategory(category);
         nbuilder.setLocalOnly(true);
 
+    }
+
+    private String getAppName(Context context) {
+            PackageManager packageManager = context.getPackageManager();
+            ApplicationInfo applicationInfo;
+            String applicationName;
+            try {
+                applicationInfo = packageManager.getApplicationInfo(context.getPackageName(), 0);
+                applicationName = (String) packageManager.getApplicationLabel(applicationInfo);
+            } catch (PackageManager.NameNotFoundException e) {
+                e.printStackTrace();
+                applicationName = "Unknown";
+            }
+            return applicationName;
     }
 
     private boolean runningOnAndroidTV() {
